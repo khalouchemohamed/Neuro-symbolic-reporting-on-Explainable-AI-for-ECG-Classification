@@ -1,0 +1,8 @@
+========================================================
+NEURO-SYMBOLIC CLINICAL REPORT
+========================================================
+Ontological Diagnosis : Normal Beat
+
+Explanation : The neural network focused its attention on the P-QRS region. The QRS complex measured at 104.0 ms falls within the expected range (80–110 ms per the ontology), with an expected morphology described as "Narrow" by the ontology. The P-wave status for a Normal Beat is defined as "Present, sinus" according to the ontological model. The measured T-wave morphology is absent, while the ontology expects "Concordant" for this beat type. These neuro-symbolic findings support the classification as a Normal Beat.
+
+========================================================

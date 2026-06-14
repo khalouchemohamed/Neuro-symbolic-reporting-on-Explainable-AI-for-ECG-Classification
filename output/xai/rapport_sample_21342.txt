@@ -1,0 +1,8 @@
+========================================================
+NEURO-SYMBOLIC CLINICAL REPORT
+========================================================
+Ontological Diagnosis : Paced / Unknown Beat
+
+Explanation : The neural network focused its attention on the QRS region. The QRS complex measured at 152.0 ms falls within the expected range (80–200 ms per the ontology), with an expected morphology described as "Variable, may be paced and wide" by the ontology. The P-wave status for a Paced / Unknown Beat is defined as "Often absent or paced" according to the ontological model. The measured T-wave morphology is positive (concordant), while the ontology expects "Variable" for this beat type. These neuro-symbolic findings support the classification as a Paced / Unknown Beat.
+
+========================================================

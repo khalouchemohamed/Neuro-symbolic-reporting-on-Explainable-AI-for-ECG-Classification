@@ -1,0 +1,8 @@
+========================================================
+NEURO-SYMBOLIC CLINICAL REPORT
+========================================================
+Ontological Diagnosis : Fusion Beat
+
+Explanation : The neural network focused its attention on the QRS region. The QRS complex measured at 136.0 ms falls within the expected range (100–160 ms per the ontology), with an expected morphology described as "Hybrid normal and ventricular morphology" by the ontology. The P-wave status for a Fusion Beat is defined as "May be present" according to the ontological model. The measured T-wave morphology is absent, while the ontology expects "Variable" for this beat type. These neuro-symbolic findings support the classification as a Fusion Beat.
+
+========================================================

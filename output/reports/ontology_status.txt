@@ -1,0 +1,12 @@
+enabled=True
+source=baked_in
+triples=137
+classes=12
+message=Baked-in ECG ontology loaded.
+
+MIT-BIH class mapping:
+Class 0 = Normal Beat
+Class 1 = Supraventricular Ectopic Beat
+Class 2 = Ventricular Ectopic Beat
+Class 3 = Fusion Beat
+Class 4 = Paced / Unknown Beat

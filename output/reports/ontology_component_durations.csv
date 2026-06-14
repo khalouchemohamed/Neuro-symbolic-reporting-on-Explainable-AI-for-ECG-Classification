@@ -1,0 +1,16 @@
+component,min_duration_ms,max_duration_ms,morphology,presence,min_amplitude_mv,max_amplitude_mv
+Fusion_P,80,130,Partially sinus,May be present,,
+Fusion_QRS,100,160,Hybrid normal and ventricular morphology,,,
+Fusion_T,,,Variable,,,
+Normal_P,80,120,"Upright, smooth","Present, sinus",0.1,0.25
+Normal_QRS,80,110,Narrow,,,
+Normal_T,,,Concordant,,0.1,0.5
+Paced_P,,,Absent or pacing artifact,Often absent or paced,,
+Paced_QRS,80,200,"Variable, may be paced and wide",,,
+Paced_T,,,Variable,,,
+SVB_P,70,120,May differ from sinus P,Present or aberrant,0.1,0.3
+SVB_QRS,70,110,Usually narrow,,,
+SVB_T,,,Usually concordant,,0.1,0.4
+VEB_P,,,Absent,Absent before ectopic QRS,,
+VEB_QRS,120,200,Wide and bizarre,,,
+VEB_T,,,Often discordant,,0.1,0.6

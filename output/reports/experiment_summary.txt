@@ -1,0 +1,13 @@
+accuracy=0.9876
+macro_f1=0.9264
+xai_samples=100
+xai_fallback_count=0
+xai_fallback_rate=0.0%
+median_dice=0.7059
+mean_dice=0.6236
+median_alignment_score=0.6625
+mean_alignment_score=0.6037
+mean_edge_focus=0.0341
+mean_coverage_delta=0.0163
+mean_inter_method_agreement=0.5286
+elapsed=1:52:34.464545

@@ -1,0 +1,108 @@
+<style>
+.ov-hero{font-family:'Inter',sans-serif;color:#1A1A2E;padding:0 0 1.5rem 0}
+.ov-hero *{box-sizing:border-box}
+.ov-title-block{text-align:center;margin-bottom:2.2rem}
+.ov-title-block h1{font-size:2rem!important;font-weight:700!important;letter-spacing:-0.03em;margin:0 0 0.4rem 0!important;color:#1A1A2E!important}
+.ov-title-block .ov-subtitle{font-size:0.92rem;color:#6C63FF;font-weight:400;letter-spacing:0.01em}
+.ov-grid{display:grid;grid-template-columns:1fr 1fr 1fr;grid-template-rows:auto auto;gap:1.3rem;align-items:stretch}
+.ov-card{background:#fff;border:1px solid #cbd5e1;border-radius:14px;padding:1.3rem 1.4rem;box-shadow:0 10px 28px rgba(15,23,42,0.10), 0 2px 8px rgba(15,23,42,0.06);transition:all 0.3s ease;height:100%}
+.ov-card:hover{box-shadow:0 14px 34px rgba(15,23,42,0.14), 0 4px 12px rgba(15,23,42,0.08);transform:translateY(-2px)}
+.ov-card-header{display:flex;align-items:center;gap:0.45rem;margin-bottom:1rem;text-transform:uppercase;font-size:0.78rem;font-weight:700;letter-spacing:0.09em;color:#1A1A2E}
+.ov-card-dot{width:9px;height:9px;border-radius:50%;background:#6C63FF;display:inline-block;box-shadow:0 0 6px rgba(108,99,255,0.45)}
+.ov-card-dot.accent-red{background:#ef4444;box-shadow:0 0 6px rgba(239,68,68,0.45)}
+.ov-branches{display:flex;gap:0.8rem;margin-bottom:0.9rem}
+.ov-branch-box{flex:1;border:1.5px solid #c4b5fd;border-radius:10px;padding:0.7rem 0.85rem;background:#f5f3ff}
+.ov-branch-box:first-child{background:#eef2ff;border-color:#a5b4fc}
+.ov-branch-name{font-size:0.82rem;font-weight:700;color:#6C63FF}
+.ov-branch-desc{font-size:0.72rem;color:#64748b;margin-top:0.15rem;line-height:1.35}
+.ov-fusion{display:flex;align-items:center;gap:0.7rem;margin:0.6rem 0}
+.ov-fusion-line{flex:1;height:1px;background:#c4b5fd}
+.ov-fusion-label{font-size:0.68rem;font-weight:600;color:#94a3b8;text-transform:uppercase;letter-spacing:0.12em}
+.ov-pred-box{background:#ede9fe;border:1.5px solid #c4b5fd;border-radius:10px;padding:0.7rem 0.9rem;text-align:center}
+.ov-pred-title{font-size:0.85rem;font-weight:700;color:#4c1d95}
+.ov-pred-sub{font-size:0.68rem;color:#7c3aed;margin-top:0.1rem}
+.ov-xai-item{padding:0.7rem 0.8rem 0.7rem 1rem;border-left:3px solid #6C63FF;margin-bottom:0.65rem;transition:background 0.2s;border-radius:0 8px 8px 0;background:#f0eeff}
+.ov-xai-item:hover{background:#e9e3ff}
+.ov-xai-item.accent-pink{border-left-color:#a78bfa;background:#faf0ff}
+.ov-xai-item.accent-pink:hover{background:#f3e8ff}
+.ov-xai-item.accent-green{border-left-color:#8b5cf6;background:#eef0ff}
+.ov-xai-item.accent-green:hover{background:#e0e7ff}
+.ov-xai-name{font-size:0.85rem;font-weight:700;color:#6C63FF}
+.ov-xai-item.accent-pink .ov-xai-name{color:#7c3aed}
+.ov-xai-item.accent-green .ov-xai-name{color:#4f46e5}
+.ov-xai-desc{font-size:0.72rem;color:#64748b;margin-top:0.1rem}
+.ov-val-table{width:100%;border-collapse:separate;border-spacing:0 0.35rem}
+.ov-val-table tr td{padding:0.5rem 0.7rem;font-size:0.8rem;background:#f8f7ff;transition:background 0.15s}
+.ov-val-table tr td:first-child{border-radius:8px 0 0 8px;color:#475569;font-weight:500}
+.ov-val-table tr td:last-child{border-radius:0 8px 8px 0;text-align:right}
+.ov-val-table tr:nth-child(1) td{background:#f0eeff}
+.ov-val-table tr:nth-child(2) td{background:#faf0ff}
+.ov-val-table tr:nth-child(3) td{background:#eef0ff}
+.ov-val-table tr:hover td{filter:brightness(0.96)}
+.ov-tag{display:inline-block;padding:0.15rem 0.5rem;border-radius:6px;font-size:0.7rem;font-weight:700;letter-spacing:0.02em}
+.ov-tag-purple{background:#ddd6fe;color:#5b21b6}
+.ov-tag-violet{background:#e9d5ff;color:#6d28d9}
+.ov-tag-blue{background:#c7d2fe;color:#3730a3}
+.ov-onto-item{padding:0.65rem 0.85rem;border-left:3px solid #6C63FF;margin-bottom:0.55rem;border-radius:0 8px 8px 0;transition:background 0.2s;background:#f0eeff}
+.ov-onto-item:hover{background:#e9e3ff}
+.ov-onto-item.v2{border-left-color:#a78bfa;background:#faf0ff}
+.ov-onto-item.v2:hover{background:#f3e8ff}
+.ov-onto-item.v3{border-left-color:#8b5cf6;background:#eef0ff}
+.ov-onto-item.v3:hover{background:#e0e7ff}
+.ov-onto-name{font-size:0.82rem;font-weight:700;color:#6C63FF}
+.ov-onto-item.v2 .ov-onto-name{color:#7c3aed}
+.ov-onto-item.v3 .ov-onto-name{color:#4f46e5}
+.ov-onto-desc{font-size:0.72rem;color:#64748b;margin-top:0.1rem}
+.ov-onto-footer{text-align:right;font-size:0.65rem;color:#a78bfa;font-style:italic;margin-top:0.4rem}
+@media(max-width:900px){.ov-grid{grid-template-columns:1fr}}
+</style>
+<div class="ov-hero">
+<div class="ov-title-block">
+<h1>XAI-Validated ECG Arrhythmia Classification</h1>
+<div class="ov-subtitle">Hybrid Deep Learning with Explainable AI Integration for Clinical Decision Support</div>
+</div>
+<div class="ov-grid">
+<!-- Row 1, Col 1: Model Architecture -->
+<div style="grid-column:1;grid-row:1">
+<div class="ov-card">
+<div class="ov-card-header"><span class="ov-card-dot"></span> Model Architecture</div>
+<div class="ov-branches">
+<div class="ov-branch-box"><div class="ov-branch-name">Signal Branch</div><div class="ov-branch-desc">Dilated TCN + CBAM<br><span style="font-size:0.65rem;color:#8b5cf6;">w/ Aux Classifier Head</span></div></div>
+<div class="ov-branch-box"><div class="ov-branch-name">Tabular Branch</div><div class="ov-branch-desc">P/QRS/T Feature MLP</div></div>
+</div>
+<div class="ov-fusion"><span class="ov-fusion-line"></span><span class="ov-fusion-label">Fusion (Modality Dropout)</span><span class="ov-fusion-line"></span></div>
+<div class="ov-pred-box"><div class="ov-pred-title">5-Class Arrhythmia Prediction</div><div class="ov-pred-sub">N, S, V, F, Q (AAMI Standard)</div></div>
+</div>
+</div>
+<!-- Row 1, Col 2: XAI Methods -->
+<div style="grid-column:2;grid-row:1">
+<div class="ov-card">
+<div class="ov-card-header"><span class="ov-card-dot"></span> XAI Methods</div>
+<div class="ov-xai-item"><div class="ov-xai-name">SHAP</div><div class="ov-xai-desc">Feature attribution via GradientExplainer</div></div>
+<div class="ov-xai-item accent-pink"><div class="ov-xai-name">Grad-CAM</div><div class="ov-xai-desc">Gradient-weighted activation mapping</div></div>
+<div class="ov-xai-item accent-green"><div class="ov-xai-name">Integrated Gradients</div><div class="ov-xai-desc">Path-integrated sensitivity analysis</div></div>
+</div>
+</div>
+<!-- Row 1, Col 3: Medical Ontology -->
+<div style="grid-column:3;grid-row:1">
+<div class="ov-card">
+<div class="ov-card-header"><span class="ov-card-dot accent-red"></span> Medical Ontology</div>
+<div class="ov-onto-item"><div class="ov-onto-name">Domain Knowledge</div><div class="ov-onto-desc">Cardiac waveform definitions, AAMI standards</div></div>
+<div class="ov-onto-item v2"><div class="ov-onto-name">Clinical Constraints</div><div class="ov-onto-desc">Morphological rules, temporal bounds</div></div>
+<div class="ov-onto-item v3"><div class="ov-onto-name">Knowledge Graph</div><div class="ov-onto-desc">Arrhythmia-to-feature mappings</div></div>
+<div class="ov-onto-footer">Infers Clinical Explanations</div>
+</div>
+</div>
+<!-- Row 2, Col 2: Clinical Validation (centred under XAI Methods) -->
+<div style="grid-column:2;grid-row:2">
+<div class="ov-card">
+<div class="ov-card-header"><span class="ov-card-dot"></span> Clinical Validation</div>
+<table class="ov-val-table">
+<tr><td>Dice Similarity</td><td><span class="ov-tag ov-tag-purple">XAI vs Mask</span></td></tr>
+<tr><td>Alignment Score</td><td><span class="ov-tag ov-tag-violet">Edge-Aware</span></td></tr>
+<tr><td>Edge Focus</td><td><span class="ov-tag ov-tag-blue">Lower = Better</span></td></tr>
+</table>
+</div>
+</div>
+</div>
+</div>
