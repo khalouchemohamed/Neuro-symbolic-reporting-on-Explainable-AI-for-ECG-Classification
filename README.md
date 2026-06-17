@@ -55,8 +55,8 @@ data/
 
 output/
   ecg_tcn_cbam_hybrid.keras           Saved model
-  figures/                            Confusion matrix and XAI summary plots
-  reports/                            Classification, ontology, experiment, and XAI CSV reports
+  figures/                            Confusion matrix, clinical occlusion, training, and XAI plots
+  reports/                            Classification, ontology, experiment, occlusion, training, and XAI reports
   xai/                                Per-sample XAI overlays, comparisons, and ontology reports
 ```
 
@@ -99,10 +99,16 @@ Resume from the checked-in model and regenerate post-training XAI outputs:
 python run_pipeline.py --mode resume_post_xai
 ```
 
-Skip XAI and stop after classification metrics:
+Skip XAI while still running baseline evaluation and the default occlusion validation:
 
 ```powershell
 python run_pipeline.py --no-xai
+```
+
+Skip the clinical occlusion validation:
+
+```powershell
+python run_pipeline.py --no-occlusion-test
 ```
 
 Useful CLI overrides:
@@ -125,6 +131,7 @@ CLI flags:
 | `--samples-per-class` | XAI samples per class | `20` |
 | `--shap-background-size` | SHAP background examples | `200` |
 | `--no-xai` | Disable XAI generation | `False` |
+| `--no-occlusion-test` | Disable active-beat clinical occlusion validation | `False` |
 
 ## Run The Dashboard
 
@@ -138,8 +145,12 @@ Pages:
 
 - `Overview`: architecture and validation summary cards.
 - `Run Pipeline`: launches `run_pipeline.py` with configurable mode, epochs, batch size, XAI samples per class, SHAP background size, and XAI skip toggle.
-- `XAI Explorer`: sample picker, classification card, ontology explanation, XAI overlays, method comparison, summary plots, and optional medical validation images.
+- `XAI Explorer`: sample picker, classification card, ontology explanation, XAI overlays, method comparison, clinical alignment validation, and model performance plots.
 - `Reports`: text reports and CSV tables with download buttons.
+
+## Clinical Occlusion Validation
+
+The pipeline can run an inference-time active-beat occlusion test after baseline evaluation. It expands sparse P/QRS/T detections into a full active-beat envelope, optionally zeros the tabular clinical features, predicts again, and writes `clinical_occlusion_summary.txt`, `clinical_occlusion_per_sample.csv`, and `clinical_occlusion_comparison.png`.
 
 ## XAI Metrics
 

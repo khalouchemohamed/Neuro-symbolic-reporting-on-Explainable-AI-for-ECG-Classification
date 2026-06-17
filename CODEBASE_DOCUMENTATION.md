@@ -32,6 +32,7 @@ This repository implements a **clinically guided MIT-BIH arrhythmia classificati
 
 - A **hybrid deep learning model** (dilated TCN + CBAM attention + clinical feature branch)
 - **Three XAI methods**: SHAP (GradientExplainer), Grad-CAM, Integrated Gradients
+- **Active-beat clinical occlusion validation** to test whether performance depends on clinically meaningful waveform regions
 - **Inline clinical morphology engine** (P/QRS/T detection and masks — no external service required at runtime)
 - **Neuro-symbolic reporting** via a baked-in OWL/RDF ontology and SPARQL queries
 - A **Streamlit dashboard** to run the pipeline and explore results
@@ -79,7 +80,7 @@ The checked-in classification report has 21,892 test beats, with weighted F1 0.9
 └──────────────────────────────┬───────────────────────────────────┘
                                ▼
 ┌──────────────────────────────────────────────────────────────────┐
-│  ecg_xai_pipeline/pipeline.py   7-step orchestration             │
+│  ecg_xai_pipeline/pipeline.py   8-step orchestration             │
 └───┬──────────┬──────────┬──────────┬─────────────────────────────┘
     │          │          │          │
     ▼          ▼          ▼          ▼
@@ -208,11 +209,16 @@ Overall dependency:
 
 1. Load best checkpoint from `output/ecg_tcn_cbam_hybrid.keras`.
 2. Predict on full test set → confusion matrix + classification report.
-3. Select `samples_per_class` (default 20) indices per class from test labels.
-4. SHAP background from random training subset (`shap_background_size` default 200).
-5. For each sample: attributions → smoothed importance → thresholded mask.
-6. Compare XAI mask vs `validate_signal` mask on the normalized central test crop before Tukey taper (`X_test_raw`).
-7. Write ontology report per sample.
+3. If enabled, run active-beat clinical occlusion on all valid test masks and write occlusion reports/plots.
+4. Select `samples_per_class` (default 20) indices per class from test labels.
+5. SHAP background from random training subset (`shap_background_size` default 200).
+6. For each sample: attributions → smoothed importance → thresholded mask.
+7. Compare XAI mask vs `validate_signal` mask on the normalized central test crop before Tukey taper (`X_test_raw`).
+8. Write ontology report per sample.
+
+### 4.3 Clinical occlusion validation path
+
+Clinical test masks are generated for the full test set. `build_occlusion_masks()` can either use sparse P/QRS/T islands (`pqrst`) or the default expanded `active_beat` envelope with dilation. `apply_clinical_region_occlusion()` zeros the selected waveform region, `zero_tabular_features()` can remove the auxiliary clinical feature signal, and the model is evaluated again to quantify accuracy, balanced-accuracy, and macro-F1 drops.
 
 ---
 
@@ -239,6 +245,9 @@ python run_pipeline.py
 
 # Resume with existing weights, skip XAI
 python run_pipeline.py --mode resume_post_xai --no-xai
+
+# Resume and skip clinical occlusion validation
+python run_pipeline.py --mode resume_post_xai --no-occlusion-test
 
 # Heavier XAI sampling
 python run_pipeline.py --epochs 30 --samples-per-class 20 --shap-background-size 400
@@ -279,19 +288,21 @@ Configure run on **Run Pipeline** page; inspect results on **XAI Explorer** and 
 | `--mode` | `full` \| `resume_post_xai` | `full` | Skip training if model exists |
 | `--epochs` | `int` | 20 | Training epochs |
 | `--batch-size` | `int` | 64 | Fit/predict batch size |
-| `--samples-per-class` | `int` | 5 | XAI stratified sample count per class |
+| `--samples-per-class` | `int` | 20 | XAI stratified sample count per class |
 | `--shap-background-size` | `int` | 200 | SHAP background set size |
 | `--no-xai` | flag | off | Sets `run_xai=False` |
+| `--no-occlusion-test` | flag | off | Sets `run_clinical_occlusion_test=False` |
 
 ### 6.2 `main() -> None`
 
-`parse_args()` → base `PipelineConfig()` → override only args that are not `None` → `run_xai = not args.no_xai` → `run_pipeline(config)`.
+`parse_args()` → base `PipelineConfig()` → override only args that are not `None` → `run_xai = not args.no_xai` and `run_clinical_occlusion_test = not args.no_occlusion_test` → `run_pipeline(config)`.
 
 ### 6.3 Execution
 
 ```bash
 python run_pipeline.py
 python run_pipeline.py --mode resume_post_xai --no-xai
+python run_pipeline.py --mode resume_post_xai --no-occlusion-test
 python run_pipeline.py --epochs 30 --samples-per-class 20
 ```
 
@@ -385,6 +396,10 @@ Optional env: `MITBIH_DATA_DIR` → `data_dir`; `MEDICAL_ENGINE_DIR` → `medica
 |-------|---------|
 | `mode` | `"full"` |
 | `run_xai` | `True` |
+| `run_clinical_occlusion_test` | `True` |
+| `clinical_occlusion_zero_features` | `True` |
+| `clinical_occlusion_mode` | `"active_beat"` |
+| `clinical_occlusion_dilation_radius` | `35` |
 
 ### 7.3 Derived path properties
 
@@ -427,12 +442,13 @@ class DatasetBundle:
     X_test: np.ndarray           # (N_test, 147, 1)
     F_test: np.ndarray
     y_test: np.ndarray
-    X_test_raw: np.ndarray       # (N_test, 187) — full-width normalized crop BEFORE Tukey (for validate_signal)
+    X_test_raw: np.ndarray       # (N_test, 147) — normalized central crop BEFORE Tukey (for validate_signal)
+    clinical_masks_test: np.ndarray  # (N_test, 147) binary morphology masks for occlusion/XAI reference
 ```
 
 | Field | Shape (typical) | Purpose |
 |-------|-----------------|--------|
-| `X_*` | `(N, 147, 1)` | Conv input; `F_*` is `(N, 3)` tabular; `X_test_raw` is normalized pre-Tukey crop for `validate_signal` overlays |
+| `X_*` | `(N, 147, 1)` | Conv input; `F_*` is `(N, 3)` tabular; `X_test_raw` and masks are normalized pre-Tukey crop references for validation and occlusion |
 
 Built only in `prepare_datasets()`; consumed by `model` training/predict and `pipeline` XAI.
 
@@ -488,6 +504,9 @@ Checks width ≥ `crop_end + 1`, last column labels in `0..num_classes-1`, signa
 | `per_sample_normalize` | Row min–max to [0, 1] |
 | `apply_tukey_window` | Row-wise Tukey(`tukey_alpha`) |
 | `apply_clinical_background_mask` | `fast_clinical_masks` then multiply random `clinical_mask_fraction` of train rows by mask |
+| `build_occlusion_masks` | Expands clinical masks into the configured occlusion region (`pqrst` or `active_beat`) |
+| `apply_clinical_region_occlusion` | Zeros the selected waveform region for inference-time validation |
+| `zero_tabular_features` | Zeros clinical feature vectors during occluded inference when enabled |
 | `augment_minority_classes` | Per `augmentation_factors`: copies with shift ±`max_shift`, scale 0.85–1.15 |
 | `apply_modality_dropout` | Zeros full feature row at `modality_dropout_rate` |
 
@@ -495,7 +514,7 @@ Checks width ≥ `crop_end + 1`, last column labels in `0..num_classes-1`, signa
 
 ### 8.8 `prepare_datasets(config) -> DatasetBundle`
 
-Order matters: `load_mitbih` → stratified val split → crop → normalize → **`extract_tabular_features` (before Tukey)** → Tukey → train-only clinical mask → minority augment → modality dropout → `F_train_model` → add channel dim `[..., None]`. Invoked from `pipeline.run_pipeline`.
+Order matters: `load_mitbih` → stratified val split → crop → normalize → **`extract_tabular_features` (before Tukey)** → Tukey → clinical masks for train/val/test → train-only background masking → minority augment → modality dropout → `F_train_model` → add channel dim `[..., None]`. Invoked from `pipeline.run_pipeline`.
 
 ---
 
@@ -575,7 +594,7 @@ Input → stem1 → stem2 → Dropout(0.1)
 | TCN filters | 128 |
 | CBAM reduction | 8 |
 | Aux loss weight | 0.30 |
-| XAI target head | aux (default) |
+| XAI target head | main output (`model.outputs[0]`) |
 | Grad-CAM layer | `stem2_relu` (config; code fallback `gradcam_target`) |
 
 ---
@@ -665,6 +684,9 @@ Used in classification reports and plot titles.
 | Symbol | Role |
 |--------|------|
 | `classification_summary` | accuracy / F1 / sklearn report string |
+| `evaluate_clinical_occlusion` | Baseline-vs-occluded inference metrics over valid test masks |
+| `occlusion_telemetry_lines` | Flatten occlusion metrics into `experiment_summary.txt` lines |
+| `write_clinical_occlusion_reports` | Writes occlusion summary text, per-sample CSV, and comparison plot |
 | `attribution_to_importance` | abs + optional Gaussian smooth + normalize |
 | `suppress_edge_importance` | zero `ignore_edge` samples at ends |
 | `importance_to_binary_mask` | percentile threshold or binary-search to match clinical coverage |
@@ -674,25 +696,26 @@ Used in classification reports and plot titles.
 
 ### 11.3 Visualization
 
-Matplotlib Agg + seaborn; figures under `figures/` and per-sample XAI PNGs under `xai/` (confusion matrix, overlays, method comparison, metric summary, inter-method agreement).
+Matplotlib Agg + seaborn; figures under `figures/` and per-sample XAI PNGs under `xai/` (confusion matrix, clinical occlusion comparison, training curves, overlays, method comparison, alignment summary, inter-method agreement).
 
 ### 11.4 `run_pipeline(config) -> dict`
 
 | Step | Action | Key outputs |
 |------|--------|-------------|
-| [1/7] | `load_baked_ontology` | `ontology_status.txt`, `ontology_component_durations.csv` |
-| [2/7] | `prepare_datasets` | `DatasetBundle` |
-| [3/7] | `train_or_load_model` | `ecg_tcn_cbam_hybrid.keras` |
-| [4/7] | `predict_main` + metrics | `classification_report.txt`, `confusion_matrix.png` |
-| [5/7] | XAI (if `run_xai`) | SHAP, GradCAM, IG |
-| [6/7] | Per-sample evaluation | `xai_clinical_comparison.csv`, PNGs, `rapport_sample_*.txt` |
-| [7/7] | Summary | `experiment_summary.txt` |
+| [1/8] | `load_baked_ontology` | `ontology_status.txt`, `ontology_component_durations.csv` |
+| [2/8] | `prepare_datasets` | `DatasetBundle`, including test clinical masks |
+| [3/8] | `train_or_load_model` | `ecg_tcn_cbam_hybrid.keras`, optional training-history plots/CSV |
+| [4/8] | `predict_main` + metrics | `classification_report.txt`, `confusion_matrix.png` |
+| [5/8] | Clinical occlusion validation (if enabled) | `clinical_occlusion_summary.txt`, per-sample CSV, comparison plot |
+| [6/8] | XAI (if `run_xai`) | SHAP, GradCAM, IG |
+| [7/8] | Per-sample evaluation | `xai_clinical_comparison.csv`, PNGs, `rapport_sample_*.txt` |
+| [8/8] | Summary | `experiment_summary.txt` |
 
-If `run_xai=False`, stops after step 4 (`summary`, `elapsed`).
+If `run_xai=False`, still performs baseline evaluation and optional clinical occlusion, then writes `experiment_summary.txt`.
 
 **Per XAI sample:** `validate_signal(X_test_raw, predicted class)` → each method: importance → mask (coverage-matched when clinical mask valid) → alignment/coverage diagnostics, plots, CSV → `extract_xai_clinical_features` + `infer_ontology_report`; aggregate inter-method agreement rows.
 
-**Returns:** `{ "summary", "xai" (DataFrame), "agreement" (DataFrame), "elapsed" }` on full run.
+**Returns:** `{ "summary", "occlusion", "xai" (DataFrame), "agreement" (DataFrame), "elapsed" }` on full run.
 
 ---
 
@@ -709,7 +732,6 @@ Streamlit app (`webapp/app.py`): overview, subprocess launcher for `run_pipeline
 | `REPORTS_DIR` | `output/reports` |
 | `FIGURES_DIR` | `output/figures` |
 | `XAI_DIR` | `output/xai` |
-| `MEDICAL_DIR` | `output/medical` |
 | `RUNNER_SCRIPT` | `run_pipeline.py` |
 
 #### `CLASS_NAMES` (UI labels)
@@ -723,7 +745,7 @@ Slightly different strings than pipeline (`"Paced / Unknown"` vs `"Paced/Unknown
 
 - **`page_overview`:** embeds `overview_hero.html`.
 - **`page_run_pipeline`:** widgets map to CLI flags (`--mode`, `--epochs`, `--batch-size`, `--samples-per-class`, `--shap-background-size`, `--no-xai`); runs `subprocess.Popen` on `RUNNER_SCRIPT`, streams stdout into session state, optional stop + periodic `st.rerun` while alive.
-- **`page_xai_explorer`:** sample picker from SHAP PNGs; cards/tabs read `xai_clinical_comparison.csv`, per-method PNGs, method comparison + summary figures, ontology `rapport_sample_*.txt`, optional `medical/` images.
+- **`page_xai_explorer`:** sample picker from SHAP PNGs; cards/tabs read `xai_clinical_comparison.csv`, per-method PNGs, method comparison tabs (`Sample Comparison`, `Alignment Summary`, `Agreement Heatmap`), `Clinical Alignment Validation`, `Model Performance`, and ontology `rapport_sample_*.txt`.
 - **`page_reports`:** text reports and CSVs with downloads.
 
 ### 12.4 `main()`
@@ -780,10 +802,16 @@ output/
 │   ├── ontology_component_durations.csv
 │   ├── classification_report.txt
 │   ├── experiment_summary.txt
+│   ├── clinical_occlusion_summary.txt
+│   ├── clinical_occlusion_per_sample.csv
+│   ├── training_history.csv
 │   ├── xai_clinical_comparison.csv
 │   └── xai_inter_method_agreement.csv
 ├── figures/
 │   ├── confusion_matrix.png
+│   ├── clinical_occlusion_comparison.png
+│   ├── training_loss.png
+│   ├── training_accuracy.png
 │   ├── xai_method_metric_summary.png
 │   └── xai_inter_method_agreement.png
 └── xai/
@@ -817,9 +845,23 @@ output/
 | `method_a`, `method_b` | Pair |
 | `agreement_score` | Inter-method overlap |
 
+#### `clinical_occlusion_per_sample.csv`
+
+| Column | Description |
+|--------|-------------|
+| `sample_idx` | Test set index |
+| `true_label` | Ground-truth class |
+| `baseline_pred` | Prediction on the original signal/features |
+| `occluded_pred` | Prediction after active-beat occlusion |
+| `flipped_correct_to_wrong` | Whether a correct baseline prediction became incorrect |
+
+#### `training_history.csv`
+
+One row per epoch from full training runs. Includes Keras history columns such as loss/accuracy variants plus an `epoch` column; used to render `training_loss.png` and `training_accuracy.png`.
+
 ### 14.3 `experiment_summary.txt` keys
 
-`accuracy`, `macro_f1`, `xai_samples`, `xai_fallback_count`, `xai_fallback_rate`, `median_dice`, `mean_dice`, `median_alignment_score`, `mean_alignment_score`, `mean_edge_focus`, `mean_coverage_delta`, `mean_inter_method_agreement`, `elapsed`.
+`accuracy`, `macro_f1`, optional occlusion telemetry (`occlusion_valid_samples`, baseline/occluded accuracy, macro-F1 and balanced-accuracy drops, occlusion mode/dilation/coverage, flipped correct-to-wrong), XAI telemetry (`xai_samples`, `xai_fallback_count`, `xai_fallback_rate`, `median_dice`, `mean_dice`, `median_alignment_score`, `mean_alignment_score`, `mean_edge_focus`, `mean_coverage_delta`, `mean_inter_method_agreement`), and `elapsed`.
 
 ---
 
@@ -833,6 +875,7 @@ output/
 | **RRR Regularization** | Penalizes input gradients w.r.t signal outside the clinical morphology wave masks (`rrr_lambda = 0.05`) to enforce clinical fidelity during TCN training |
 | **RRR Training Wrapper** | Implements custom train loop inside Keras `RRRModel` subclass but checkpoints base Functional model to keep prediction pipelines clean and dependency-free |
 | **Aligned Edge Suppression** | Clinical mask edges are suppressed symmetrically to match the XAI edge-suppressed domain before computing the standardized alignment score, preventing boundary artifacts |
+| **Active-beat occlusion validation** | Masks the expanded morphological envelope at inference time to test whether performance depends on clinically meaningful waveform regions rather than residual baseline cues |
 | **Inline morphology** | No runtime dependency on external medical engine; reproducible masks in `data.py` |
 | **Features before Tukey** | Edge taper corrupts P-wave amplitude thresholds |
 | **Class-weighted training** | MIT-BIH imbalance; weights capped at 10× |
