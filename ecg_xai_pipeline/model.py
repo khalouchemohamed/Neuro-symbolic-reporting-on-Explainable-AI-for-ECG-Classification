@@ -360,10 +360,12 @@ class FunctionalModelCheckpoint(tf.keras.callbacks.Callback):
                 self.model.save(self.filepath)
 
 
-def train_or_load_model(bundle: DatasetBundle, config: PipelineConfig) -> tf.keras.Model:
+def train_or_load_model(
+    bundle: DatasetBundle, config: PipelineConfig
+) -> tuple[tf.keras.Model, dict[str, list[float]] | None]:
     resume = config.mode == "resume_post_xai" and config.model_path.exists()
     if resume:
-        return tf.keras.models.load_model(config.model_path, compile=False)
+        return tf.keras.models.load_model(config.model_path, compile=False), None
 
     model = build_hybrid_tcn_cbam_model(
         signal_shape=(config.cropped_len, 1),
@@ -431,7 +433,7 @@ def train_or_load_model(bundle: DatasetBundle, config: PipelineConfig) -> tf.ker
         x_train_fit = [bundle.X_train, bundle.F_train_model]
         x_val_fit = [bundle.X_val, bundle.F_val]
 
-    fit_model.fit(
+    history = fit_model.fit(
         x_train_fit,
         [bundle.y_train, bundle.y_train],
         validation_data=(
@@ -445,7 +447,7 @@ def train_or_load_model(bundle: DatasetBundle, config: PipelineConfig) -> tf.ker
         callbacks=callbacks,
         verbose=1,
     )
-    return tf.keras.models.load_model(config.model_path, compile=False)
+    return tf.keras.models.load_model(config.model_path, compile=False), history.history
 
 
 # =============================================================================

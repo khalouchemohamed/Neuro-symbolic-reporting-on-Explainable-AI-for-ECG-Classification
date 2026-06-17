@@ -77,6 +77,11 @@ class PipelineConfig:
 
     mode: str = "full"
     run_xai: bool = True
+    run_clinical_occlusion_test: bool = True
+    clinical_occlusion_zero_features: bool = True
+    # "pqrst" = sparse P/QRS/T islands only; "active_beat" = full beat envelope
+    clinical_occlusion_mode: str = "active_beat"
+    clinical_occlusion_dilation_radius: int = 35
 
     @property
     def cropped_len(self) -> int:

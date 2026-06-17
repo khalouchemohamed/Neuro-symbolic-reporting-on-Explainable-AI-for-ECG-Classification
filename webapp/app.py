@@ -637,6 +637,13 @@ def _sample_ids_from_xai() -> list[int]:
     return sorted(img_ids)
 
 
+def _render_plot_image(path: Path, missing_text: str, width: bool = True) -> None:
+    if path.exists():
+        st.image(Image.open(path), use_container_width=width)
+    else:
+        st.caption(missing_text)
+
+
 
 # ---------------------------------------------------------------------------
 # Pages
@@ -953,7 +960,15 @@ def page_xai_explorer():
     view_col, tab_col = st.columns([1, 2.5])
     
     with view_col:
-        view_mode = st.selectbox("Plot view", ["XAI Method attention overlay", "XAI Method comparison", "Medical validation"])
+        view_mode = st.selectbox(
+            "Plot view",
+            [
+                "XAI Method attention overlay",
+                "XAI Method comparison",
+                "Clinical Alignment Validation",
+                "Model Performance",
+            ],
+        )
 
     with tab_col:
         st.markdown("<div style='height: 1.6rem;'></div>", unsafe_allow_html=True)
@@ -970,7 +985,7 @@ def page_xai_explorer():
                         st.caption(f"No {method} image for sample {chosen_id}.")
 
         elif view_mode == "XAI Method comparison":
-            tabs = st.tabs(["Sample Comparison", "Metric Summary", "Agreement Heatmap"])
+            tabs = st.tabs(["Sample Comparison", "Alignment Summary", "Agreement Heatmap"])
             
             with tabs[0]:
                 p = XAI_DIR / f"method_comparison_sample_{chosen_id}.png"
@@ -995,16 +1010,31 @@ def page_xai_explorer():
                 else:
                     st.caption("Agreement heatmap not generated yet.")
 
-        elif view_mode == "Medical validation":
-            suffixes = [("mask", "Clinical Mask"), ("regions", "Detected Regions"), ("summary", "Medical Summary")]
-            tabs = st.tabs([s[1] for s in suffixes])
-            for tab, (sfx, label) in zip(tabs, suffixes):
-                with tab:
-                    p = MEDICAL_DIR / f"medical_sample_{chosen_id}_{sfx}.png"
-                    if p.exists():
-                        st.image(Image.open(p), use_container_width=True)
-                    else:
-                        st.caption(f"No {label.lower()} image for sample {chosen_id}.")
+        elif view_mode == "Clinical Alignment Validation":
+            p = FIGURES_DIR / "clinical_occlusion_comparison.png"
+            if p.exists():
+                _, center, _ = st.columns([0.12, 0.76, 0.12])
+                center.image(Image.open(p), use_container_width=True)
+            else:
+                st.caption("Clinical alignment validation plot not generated yet.")
+
+        elif view_mode == "Model Performance":
+            tabs = st.tabs(["Confusion Matrix", "Training Loss", "Training Accuracy"])
+            with tabs[0]:
+                _render_plot_image(
+                    FIGURES_DIR / "confusion_matrix.png",
+                    "Confusion matrix not generated yet.",
+                )
+            with tabs[1]:
+                _render_plot_image(
+                    FIGURES_DIR / "training_loss.png",
+                    "Training loss plot will appear after the next full training run.",
+                )
+            with tabs[2]:
+                _render_plot_image(
+                    FIGURES_DIR / "training_accuracy.png",
+                    "Training accuracy plot will appear after the next full training run.",
+                )
 
 
 

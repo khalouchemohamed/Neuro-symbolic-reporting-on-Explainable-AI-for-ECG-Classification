@@ -50,17 +50,15 @@ This repository implements a **clinically guided MIT-BIH arrhythmia classificati
 
 | Metric | Value |
 |--------|------:|
-| Test accuracy | 0.9876 |
-| Macro F1 | 0.9264 |
-| XAI samples evaluated | 100 |
-| Median Dice | 0.7059 |
-| Mean Dice | 0.6236 |
-| Median alignment score | 0.6625 |
-| Mean alignment score | 0.6037 |
-| Mean edge focus | 0.0341 |
-| Mean coverage delta | 0.0163 |
-| Mean inter-method agreement | 0.5286 |
-| XAI Fallback Rate | 0.0% |
+| Test Accuracy (Baseline) | 0.9876 |
+| Macro F1-Score (Baseline) | 0.9264 |
+| Occluded Test Accuracy | 52.54% |
+| Absolute Accuracy Drop | 46.23% |
+| Balanced Accuracy Drop | 51.82% |
+| Median Clinical Dice | 0.7059 |
+| Median Alignment Score | 0.6625 |
+| Mean Inter-Method Dice | 0.5286 |
+| Mean Edge Focus | 0.0341 |
 
 The checked-in classification report has 21,892 test beats, with weighted F1 0.99 and macro-average F1 0.93.
 

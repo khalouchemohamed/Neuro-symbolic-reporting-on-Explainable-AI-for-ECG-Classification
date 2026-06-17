@@ -1,0 +1,32 @@
+Clinical Region Occlusion Test (inference-time)
+=============================================
+Occlusion mode: active_beat
+Dilation radius: 35 samples
+Mean masked coverage: 70.9%
+Valid test samples: 21892
+Baseline accuracy: 0.9876
+Occluded accuracy: 0.5254
+Accuracy drop: 0.4623
+Baseline balanced accuracy: 0.9319
+Occluded balanced accuracy: 0.4137
+Balanced accuracy drop: 0.5182
+Baseline macro F1: 0.9264
+Occluded macro F1: 0.2924
+Macro F1 drop: 0.6340
+Flipped correct->wrong: 10150
+
+Interpretation:
+Large accuracy and balanced-accuracy drop after occluding the active beat envelope confirms the model depends on clinically important waveform regions rather than residual baseline cues.
+
+Occluded classification report:
+                  precision    recall  f1-score   support
+
+          Normal       0.83      0.58      0.69     18118
+Supraventricular       0.00      0.00      0.00       556
+     Ventricular       0.39      0.17      0.23      1448
+          Fusion       0.02      0.98      0.04       162
+   Paced/Unknown       0.99      0.34      0.50      1608
+
+        accuracy                           0.53     21892
+       macro avg       0.45      0.41      0.29     21892
+    weighted avg       0.79      0.53      0.62     21892

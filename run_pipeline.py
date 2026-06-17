@@ -19,6 +19,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--samples-per-class", type=int, default=None)
     parser.add_argument("--shap-background-size", type=int, default=None)
     parser.add_argument("--no-xai", action="store_true")
+    parser.add_argument("--no-occlusion-test", action="store_true")
     return parser.parse_args()
 
 
@@ -36,6 +37,7 @@ def main() -> None:
         samples_per_class=args.samples_per_class if args.samples_per_class is not None else base.samples_per_class,
         shap_background_size=args.shap_background_size if args.shap_background_size is not None else base.shap_background_size,
         run_xai=not args.no_xai,
+        run_clinical_occlusion_test=not args.no_occlusion_test,
     )
 
     from ecg_xai_pipeline.pipeline import run_pipeline

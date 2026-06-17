@@ -9,6 +9,7 @@ from dataclasses import dataclass
 
 import numpy as np
 import pandas as pd
+from scipy.ndimage import binary_dilation
 from scipy.signal.windows import tukey
 from sklearn.model_selection import train_test_split
 
@@ -47,6 +48,7 @@ class DatasetBundle:
     X_test_raw: np.ndarray
     clinical_masks_train: np.ndarray | None = None
     clinical_masks_val: np.ndarray | None = None
+    clinical_masks_test: np.ndarray | None = None
 
 
 # =============================================================================
@@ -487,6 +489,58 @@ def apply_clinical_background_mask(
     return X_out.astype(np.float32), masks.astype(np.uint8)
 
 
+def apply_clinical_region_occlusion(
+    X: np.ndarray, masks: np.ndarray
+) -> np.ndarray:
+    """Zero P/QRS/T clinical regions in the waveform (inverse of background masking)."""
+    signal = np.asarray(X, dtype=np.float32)
+    mask = np.asarray(masks, dtype=np.float32)
+    if signal.ndim == 3:
+        mask = mask[..., None]
+    return (signal * (1.0 - mask)).astype(np.float32)
+
+
+def zero_tabular_features(F: np.ndarray) -> np.ndarray:
+    return np.zeros_like(F, dtype=np.float32)
+
+
+def build_occlusion_masks(
+    clinical_masks: np.ndarray,
+    signals: np.ndarray,
+    config: PipelineConfig,
+) -> np.ndarray:
+    """Expand sparse P/QRS/T masks into the occlusion region used at inference."""
+    masks = np.asarray(clinical_masks, dtype=np.uint8)
+    if config.clinical_occlusion_mode == "pqrst":
+        expanded = masks.copy()
+    elif config.clinical_occlusion_mode == "active_beat":
+        expanded = np.zeros_like(masks)
+        for i in range(len(signals)):
+            signal = np.asarray(signals[i], dtype=float).reshape(-1)
+            active_end = _find_active_end(signal)
+            marked = np.where(masks[i] > 0)[0]
+            if len(marked) == 0:
+                continue
+            left = int(marked.min())
+            expanded[i, left : active_end + 1] = 1
+    else:
+        raise ValueError(
+            f"Unknown clinical_occlusion_mode: {config.clinical_occlusion_mode!r}"
+        )
+
+    radius = config.clinical_occlusion_dilation_radius
+    if radius > 0:
+        structure = np.ones(radius * 2 + 1, dtype=bool)
+        dilated = np.zeros_like(expanded)
+        for i in range(len(expanded)):
+            dilated[i] = binary_dilation(expanded[i], structure=structure).astype(
+                np.uint8
+            )
+        expanded = dilated
+
+    return np.clip(expanded, 0, 1).astype(np.uint8)
+
+
 def augment_minority_classes(
     X: np.ndarray,
     F: np.ndarray,
@@ -583,6 +637,7 @@ def prepare_datasets(config: PipelineConfig) -> DatasetBundle:
     # -- Generate RRR clinical masks on pre-Tukey normalized signals --
     # Masks are morphological (P/QRS/T regions) and work best on undistorted
     # signals.  They are only needed when rrr_lambda > 0.
+    masks_test = fast_clinical_masks(X_test_norm, y_test, config)
     if config.rrr_lambda > 0:
         masks_train_base = fast_clinical_masks(X_train_norm, y_train, config)
         masks_val = fast_clinical_masks(X_val_norm, y_val, config)
@@ -619,4 +674,5 @@ def prepare_datasets(config: PipelineConfig) -> DatasetBundle:
         X_test_raw=X_test_raw.astype(np.float32),
         clinical_masks_train=masks_train_aug,
         clinical_masks_val=masks_val,
+        clinical_masks_test=masks_test,
     )
