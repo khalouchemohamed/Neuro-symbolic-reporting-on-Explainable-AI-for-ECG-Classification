@@ -1,6 +1,6 @@
 # Neuro-Symbolic Reporting on Explainable AI for ECG Classification
 
-Private research project for MIT-BIH ECG beat classification with a hybrid TCN/CBAM neural model, clinical feature fusion, Right-for-the-Right-Reasons regularization, explainable AI overlays, and ontology-backed neuro-symbolic reports.
+research project designed for MIT-BIH ECG beat classification with a hybrid TCN/CBAM neural model, clinical feature fusion, Right-for-the-Right-Reasons regularization, explainable AI overlays, and ontology-backed neuro-symbolic reports.
 
 The repository intentionally includes the local experiment artifacts:
 
@@ -188,4 +188,4 @@ It does not directly implement a broader clinician table containing atrial fibri
 
 ## GitHub Packaging
 
-This private repository includes source code, dataset CSVs, saved model, output figures, output reports, and per-sample XAI artifacts. `.venv/`, Python caches, local environment files, editor folders, and Streamlit secrets remain ignored because they are machine-local or sensitive runtime state.
+This repository includes source code, dataset CSVs, saved model, output figures, output reports, and per-sample XAI artifacts. `.venv/`, Python caches, local environment files, editor folders, and Streamlit secrets remain ignored because they are machine-local or sensitive runtime state.
