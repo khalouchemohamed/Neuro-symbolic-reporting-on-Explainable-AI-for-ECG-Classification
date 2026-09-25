@@ -1,4 +1,5 @@
 # Neuro-Symbolic Reporting on Explainable AI for ECG Classification
+<img width="2778" height="1284" alt="775_1x_shots_so" src="https://github.com/user-attachments/assets/676e8691-2215-47ff-9c16-14370526562c" />
 
 research project designed for MIT-BIH ECG beat classification with a hybrid TCN/CBAM neural model, clinical feature fusion, Right-for-the-Right-Reasons regularization, explainable AI overlays, and ontology-backed neuro-symbolic reports.
 
